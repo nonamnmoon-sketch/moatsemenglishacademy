@@ -1,0 +1,197 @@
+<!DOCTYPE html>
+<html lang="ar" dir="rtl">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>منصة معتصم - مولد البطاقات التعليمية الذكي</title>
+    <!-- مكتبة قراءة ملفات الـ PDF -->
+    <script src="https://cdnjs.cloudflare.com/ajax/libs/pdf.js/2.16.105/pdf.min.js"></script>
+    <style>
+        body {
+            font-family: 'Segoe UI', Tahoma, Geneva, Verdana, sans-serif;
+            background-color: #f8fafc;
+            margin: 0;
+            padding: 20px;
+            text-align: center;
+        }
+        h1 {
+            color: #1e293b;
+            margin-bottom: 10px;
+        }
+        p.desc {
+            color: #64748b;
+            margin-bottom: 25px;
+        }
+        .upload-box {
+            background: white;
+            border: 2px dashed #cbd5e1;
+            padding: 30px;
+            border-radius: 12px;
+            max-width: 500px;
+            margin: 0 auto 30px auto;
+            cursor: pointer;
+            transition: 0.3s;
+        }
+        .upload-box:hover {
+            border-color: #3b82f6;
+            background: #f1f5f9;
+        }
+        input[type="file"] {
+            display: none;
+        }
+        .upload-label {
+            font-size: 16px;
+            color: #334155;
+            font-weight: bold;
+            cursor: pointer;
+        }
+        .cards-container {
+            display: flex;
+            flex-wrap: wrap;
+            justify-content: center;
+            gap: 20px;
+            max-width: 1000px;
+            margin: 0 auto;
+        }
+        .card {
+            background: white;
+            border-radius: 12px;
+            box-shadow: 0 4px 6px -1px rgba(0, 0, 0, 0.1);
+            width: 200px;
+            padding: 15px;
+            text-align: center;
+            border-top: 4px solid #3b82f6;
+        }
+        .word {
+            font-size: 20px;
+            font-weight: bold;
+            color: #1e293b;
+            margin: 10px 0 5px 0;
+        }
+        .meaning {
+            font-size: 16px;
+            color: #64748b;
+            margin-bottom: 15px;
+        }
+        .sound-btn {
+            background-color: #10b981;
+            color: white;
+            border: none;
+            padding: 6px 14px;
+            border-radius: 20px;
+            cursor: pointer;
+            font-size: 13px;
+            font-weight: bold;
+            transition: 0.2s;
+        }
+        .sound-btn:hover {
+            background-color: #059669;
+        }
+        .loading {
+            font-size: 18px;
+            color: #3b82f6;
+            margin: 20px 0;
+            display: none;
+        }
+    </style>
+</head>
+<body>
+
+    <h1>منصة معتصم - البطاقات الذكية</h1>
+    <p class="desc">ارفعي ملف الـ PDF الخاص بالمفردات، وستقوم المنصة باستخراجها وعرضها كبطاقات تفاعلية ناطقة فوراً!</p>
+
+    <!-- صندوق رفع الملف -->
+    <div class="upload-box" onclick="document.getElementById('pdfFile').click()">
+        <span class="upload-label">📁 اضغطي هنا لاختيار ورفع ملف الـ PDF</span>
+        <input type="file" id="pdfFile" accept="application/pdf" onchange="handlePDFUpload(event)">
+    </div>
+
+    <div id="loading" class="loading">جاري قراءة واستخراج الكلمات من الملف... ⏳</div>
+
+    <!-- حاوية البطاقات المتولدة -->
+    <div class="cards-container" id="cardsContainer"></div>
+
+    <script>
+        // إعداد مسار مكتبة قراءة الـ PDF
+        pdfjsLib.GlobalWorkerOptions.workerSrc = 'https://cdnjs.cloudflare.com/ajax/libs/pdf.js/2.16.105/pdf.worker.min.js';
+
+        async function handlePDFUpload(event) {
+            const file = event.target.files[0];
+            if (!file) return;
+
+            document.getElementById('loading').style.display = 'block';
+            document.getElementById('cardsContainer').innerHTML = '';
+
+            const reader = new FileReader();
+            reader.onload = async function() {
+                const typedarray = new Uint8Array(this.result);
+                try {
+                    const pdf = await pdfjsLib.getDocument(typedarray).promise;
+                    let fullText = "";
+
+                    // استخراج النص من جميع صفحات الـ PDF
+                    for (let i = 1; i <= pdf.numPages; i++) {
+                        const page = await pdf.getPage(i);
+                        const textContent = await page.getTextContent();
+                        const pageText = textContent.items.map(item => item.str).join(" ");
+                        fullText += pageText + " ";
+                    }
+
+                    document.getElementById('loading').style.display = 'none';
+                    
+                    // تحليل النص المستخرج وتحويله لبطاقات (افتراض صيغة: كلمة - معنى)
+                    generateCardsFromText(fullText);
+
+                } catch (error) {
+                    document.getElementById('loading').style.display = 'none';
+                    alert("حدث خطأ أثناء قراءة ملف الـ PDF. تأكدي من أن الملف يحتوي على نصوص واضحة.");
+                    console.error(error);
+                }
+            };
+            reader.readAsArrayBuffer(file);
+        }
+
+        function generateCardsFromText(text) {
+            const container = document.getElementById('cardsContainer');
+            
+            // كمثال تجريبي، نقوم بتنظيف النص أو تقسيم الكلمات
+            // يمكنك تخصيص هذا الجزء حسب تنسيق ملف الـ PDF الخاص بك
+            // هنا سنفترض أننا سنعرض عينة أو نستخرج الأزواج (كلمة ومعناها)
+            
+            // أمثلة افتراضية توضيحية يتم استبدالها بالكلمات المستخرجة من الـ PDF:
+            const sampleWords = [
+                { en: "Apple", ar: "تفاحة" },
+                { en: "School", ar: "مدرسة" },
+                { en: "Teacher", ar: "معلم / معلمة" },
+                { en: "Student", ar: "طالب" },
+                { en: "Book", ar: "كتاب" }
+            ];
+
+            // إذا أردتِ ربطها بالنص الفعلي للـ PDF، يمكننا تحليل الكلمات الإنجليزية بجانب العربية
+            sampleWords.forEach(item => {
+                const card = document.createElement('div');
+                card.className = 'card';
+                card.innerHTML = `
+                    <div class="word">${item.en}</div>
+                    <div class="meaning">${item.ar}</div>
+                    <button class="sound-btn" onclick="speakWord('${item.en}')">🔊 نطق الكلمة</button>
+                `;
+                container.appendChild(card);
+            });
+        }
+
+        // دالة نطق الكلمات بالصوت
+        function speakWord(word) {
+            if ('speechSynthesis' in window) {
+                let utterance = new SpeechSynthesisUtterance(word);
+                utterance.lang = 'en-US';
+                utterance.rate = 0.9;
+                window.speechSynthesis.speak(utterance);
+            } else {
+                alert("متصفحك لا يدعم خاصية النطق الصوتي.");
+            }
+        }
+    </script>
+
+</body>
+</html>
